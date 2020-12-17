@@ -64,15 +64,16 @@ def assets_download(dic_start_params, dic_end_params):
             # Seleciona os diretórios da pool
             files = np.array(fs.ls('noaa-goes16/GLM-L2-LCFA/{0}/{1:03d}/{2:02d}/'.format(year, day_in_year, hour)))
 
+            # Cria a pasta relacionada aos parâmetros
             folder_srt = '{0:02d}-{1:02d}-{2}#T-{3}h00m'.format(day, month, year, hour)
             os.mkdir(os.path.join(os.getcwd(), folder_srt))
 
             for file in files:
                 # Download dos arquivos
                 fs.get(file, file.split('/')[-1])
+
                 # Move o arquivo p/ pasta designada no loop
                 lista_arquivos_fonte = os.listdir(os.getcwd())
-
                 for file in lista_arquivos_fonte:
                     if file.endswith('.nc'):
                         shutil.move(os.path.join(os.getcwd(), file),
