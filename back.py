@@ -126,7 +126,8 @@ def assets_download(dic_start_params, dic_end_params):
     os.chdir(curr_path)
 
 
-def data_manipulation(year, month, day, hour, radius, category, center=(0, 0)):
+def data_manipulation(year, month, day, hour, radius, category, center=(0, 0),
+                      root_dir=os.getcwd()):
     """
     Function manipulates .nc files located at args and creates a .csv
     based on it's parameters
@@ -138,6 +139,7 @@ def data_manipulation(year, month, day, hour, radius, category, center=(0, 0)):
     :radius: float
     :category: string
     :center: tuple
+    :root_dir: string
     :returns: TODO
 
     """
@@ -149,18 +151,59 @@ def data_manipulation(year, month, day, hour, radius, category, center=(0, 0)):
 
     from netCDF4 import Dataset
 
-    # Guarda o diretório atual
-    curr_dir = os.getcwd()
-
     # Pasta com os .nc
     assets_dir = os.path.join('assets',
-             str(year), str(month), str(day), str(hour))
+                              str(year), str(month), str(day), str(hour))
 
     # Todos os arquivos tem extensão .nc
-    files = os.listdir(assets_dir)
+    try:
+        os.chdir(assets_dir)
+    except FileNotFoundError:
+        print('O arquivo não foi baixado')
+        return
+
+    # Inicializando listas
+
+    # glm_data.variables['flash_id'][idx]
+    flash_id_list = []
+    # dia_formatado
+    data_list = []
+    # tempo_inicio_formatado
+    tempo_inicio_formatado_list = []
+    # tempo_final_formatado
+    tempo_final_formatado_list = []
+    # tempo_exato
+    tempo_exato_list = []
+    # str(AD_d)
+    AD_d_list = []
+
+    # glm_data.variables[ 'flash_time_offset_of_first_event'][idx]
+    flash_time_offset_of_first_event_list = []
+    # glm_data.variables[ 'flash_time_offset_of_last_event'][idx]
+    flash_time_offset_of_last_event_list = []
+    # glm_data.variables[ 'flash_frame_time_offset_of_first_event'][idx]
+    flash_frame_time_offset_of_first_event_list = []
+    # glm_data.variables[ 'flash_frame_time_offset_of_last_event'][idx]
+    flash_frame_time_offset_of_last_event_list = []
+    # glm_data.variables['flash_lat'][idx]
+    flash_lat_list = []
+    # glm_data.variables['flash_lon'][idx]
+    flash_lon_list = []
+    # glm_data.variables['flash_area'][idx]
+    flash_area_list = []
+    # glm_data.variables['flash_energy'][idx]
+    flash_energy_list = []
+    # glm_data.variables['flash_quality_flag'][idx]
+    flash_quality_flag_list = []
+    # glm_data.variables['product_time'][idx]
+    product_time_list = []
+
 
     # Laço p/filtrar cada arquivo
+    files = os.listdir()
     for file in files:
+        print(os.getcwd())
+        print(file)
         glm_data = Dataset(file)
 
         tempo_inicio = glm_data.getncattr('time_coverage_start')
@@ -176,56 +219,115 @@ def data_manipulation(year, month, day, hour, radius, category, center=(0, 0)):
             ',' + tempo_final[14:16] + ',' + tempo_final[17:21]
 
         # Número de eventos
-        lenght = len(glm_data.variables['flash_id'][:])
+        lenght = len(glm_data.variables['flash_id'])
+
+
         # Adquirir dados e filtrar
         for idx in range(lenght):
 
             var = str(int(tempo_inicio[17:19]) + float(glm_data.variables['flash_time_offset_of_first_event'][idx]))
+
             tempo_exato = tempo_inicio[11:13] + ',' + \
                 tempo_inicio[14:16] + ',' + var[0:8]
 
             # Distância do flash ao centro
-            Lat1, Lon1 = center * np.pi / 180
+            Lat1, Lon1 = center[0] * np.pi / 180, center[1] * np.pi / 180
             Lat2, Lon2 = glm_data.variables['flash_lat'][idx] * np.pi / 180,\
-                         glm_data.variables['flash_lon'][idx] * np.pi / 180
+                glm_data.variables['flash_lon'][idx] * np.pi / 180
             AD_d = (6378137.00 * math.acos(
                 math.cos(Lat1) * math.cos(Lat2) * math.cos(Lon2 - Lon1) +
                 math.sin(Lat1) * math.sin(Lat2))) / 1000
 
-            if AD_d <= radius:
-                flashes = pd.DataFrame({
-                'flash_id': glm_data.variables['flash_id'][idx],
-                'Data': dia_formatado,
-                'Tempo_inicio': tempo_inicio_formatado,
-                'Tempo_final': tempo_final_formatado,
-                'Tempo_exato': tempo_exato,
-                'Distância': AD_d,
+            # if AD_d <= radius:
 
-                'flash_time_offset_of_first_event': glm_data.variables[
-                'flash_time_offset_of_first_event'][idx],
+            flash_id_list.append(glm_data.variables['flash_id'][idx])
+            data_list.append(dia_formatado)
+            tempo_inicio_formatado_list.append(tempo_inicio_formatado)
+            tempo_final_formatado_list.append(tempo_final_formatado)
+            tempo_exato_list.append(tempo_exato)
+            AD_d_list.append(AD_d)
 
-                'flash_time_offset_of_last_event': glm_data.variables[
-                'flash_time_offset_of_last_event'][idx],
+            flash_time_offset_of_first_event_list.append(
+                 glm_data.variables['flash_time_offset_of_first_event'][idx]
+                            )
 
-                'flash_frame_time_offset_of_first_event': glm_data.variables[
-                'flash_frame_time_offset_of_first_event'][idx],
+            flash_time_offset_of_last_event_list.append(
+                 glm_data.variables['flash_time_offset_of_last_event'][idx]
+                            )
 
-                'flash_frame_time_offset_of_last_event': glm_data.variables[
-                'flash_frame_time_offset_of_last_event'][idx],
+            flash_frame_time_offset_of_first_event_list.append(
+                 glm_data.variables['flash_frame_time_offset_of_first_event'][idx]
+                            )
 
-                'flash_lat': glm_data.variables['flash_lat'][idx],
+            flash_frame_time_offset_of_last_event_list.append(
+                 glm_data.variables['flash_frame_time_offset_of_last_event'][idx]
+                            )
 
-                'flash_lon': glm_data.variables['flash_lon'][idx],
+            flash_lat_list.append(
+                    glm_data.variables['flash_lat'][idx]
+                    )
+            flash_lon_list.append(
+                    glm_data.variables['flash_lon'][idx]
+                    )
+            flash_area_list.append(
+                    glm_data.variables['flash_area'][idx]
+                    )
+            flash_energy_list.append(
+                    glm_data.variables['flash_energy'][idx]
+                    )
+            flash_quality_flag_list.append(
+                    glm_data.variables['flash_quality_flag'][idx]
+                    )
+            product_time_list.append(
+                    glm_data.variables['product_time'][idx]
+                    )
+            # endfor
+        # endfor
 
-                'flash_area': glm_data.variables['flash_area'][idx],
+    flashes = pd.DataFrame.from_dict({
+        'flash_id': flash_id_list,
+        'data': pd.Series(data_list),
+        'tempo_inicio': tempo_inicio_formatado_list,
+        'tempo_final': tempo_final_formatado_list,
+        'tempo_exato': tempo_exato_list,
+        'distância': AD_d_list,
 
-                'flash_energy': glm_data.variables['flash_energy'][idx],
+        'flash_time_offset_of_first_event':
+        flash_time_offset_of_first_event_list,
 
-                'flash_quality_flag': glm_data.variables['flash_quality_flag'][idx],
+        'flash_time_offset_of_last_event':
+        flash_time_offset_of_last_event_list,
 
-                'product_time': glm_data.variables['product_time'][idx]
-                }
-                )
-                csv_name = os.path.join(curr_dir, 'csv',
-                                        f'{year}_{month}_{day}_{hour}.csv')
-                flashes.to_csv(csv_name, index=False)
+        'flash_frame_time_offset_of_first_event':
+        flash_frame_time_offset_of_first_event_list,
+
+        'flash_frame_time_offset_of_last_event':
+        flash_frame_time_offset_of_last_event_list,
+
+        'flash_lat': flash_lat_list,
+        'flash_lon': flash_lon_list,
+        'flash_area': flash_area_list,
+        'flash_energy': flash_energy_list,
+        'flash_quality_flag': flash_quality_flag_list,
+        'product_time': product_time_list
+    })
+    csv_name = os.path.join(root_dir, 'csv',
+                            f'{year}_{month}_{day}_{hour}.csv')
+    flashes.to_csv(csv_name)
+    os.chdir(root_dir)
+
+
+def data_acces(params):
+    """
+    Utilizes data_manipulation to access data on assets folder and generate csv
+    files
+
+    :params: dictionary
+    :returns: nothing
+
+    """
+    hour = params['hour']
+    day = params['day']
+    month = params['month']
+    year = params['year']
+    data_manipulation(year, month, day, hour, 50, 'flash')
