@@ -180,10 +180,14 @@ def flash_csv(assets_dir, csv_dir, root_dir):
     else:
         print('assets_dir não existe')
         return False
+
+    # Cria pasta tmp p/ guardar arquivos temporários
+
     files = os.listdir()
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
+        print('flash')
         print(os.getcwd())
         print(file)
         # Abre o arquivo
@@ -313,6 +317,7 @@ def group_csv(assets_dir, csv_dir, root_dir):
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
+        print('group')
         print(os.getcwd())
         print(file)
         # Abre o arquivo
@@ -401,6 +406,7 @@ def event_csv(assets_dir, csv_dir, root_dir):
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
+        print('event')
         print(os.getcwd())
         print(file)
         # Abre o arquivo
