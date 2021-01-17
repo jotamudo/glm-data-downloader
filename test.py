@@ -16,10 +16,18 @@ end_params = {
     'year': '2019'
 }
 
+special_params = {
+    'hour': '20',
+    'day': '1',
+    'month': '9',
+    'year': '2019'
+}
+
 tic = time()
 
 # back.assets_download(start_params, end_params)
-back.data_acces(start_params)
+# back.assets_download(special_params, special_params)
+back.data_acces(special_params)
 # back.generate_map(start_params, start_params, 1000, (-1.474012, -48.457615))
 tac = time()
 
