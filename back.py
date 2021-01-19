@@ -111,7 +111,7 @@ def assets_download(dic_start_params, dic_end_params):
                 # Download dos arquivos
                 fs.get(file, file.split('/')[-1])
                 cnt += 1
-                print(file, f'{cnt/quant}% done')
+                print(file, f'{(cnt/quant)*(100):.2f}% done')
 
                 # Move o arquivo p/ pasta designada no loop
                 ls = os.listdir(os.getcwd())
@@ -202,7 +202,7 @@ def flash_csv(assets_dir, csv_dir, root_dir):
         print('flash')
         print(os.getcwd())
         file_cnt += 1
-        print(file, f'{file_cnt/file_quant:.2f}% done')
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
@@ -305,7 +305,7 @@ def group_csv(assets_dir, csv_dir, root_dir):
         print('group')
         print(os.getcwd())
         file_cnt += 1
-        print(file, f'{file_cnt/file_quant:.2f}% done')
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
@@ -396,7 +396,7 @@ def event_csv(assets_dir, csv_dir, root_dir):
         print('event')
         print(os.getcwd())
         file_cnt += 1
-        print(file, f'{file_cnt/file_quant:.2f}% done')
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
