@@ -104,10 +104,14 @@ def assets_download(dic_start_params, dic_end_params):
 
             # Cria a pasta relacionada aos parâmetros
             folder_srt = make_folder(year, month, day, hour)
+            cnt = 0
+            quant = len(files)
 
             for file in files:
                 # Download dos arquivos
                 fs.get(file, file.split('/')[-1])
+                cnt += 1
+                print(file, f'{cnt/quant}% done')
 
                 # Move o arquivo p/ pasta designada no loop
                 ls = os.listdir(os.getcwd())
@@ -177,32 +181,6 @@ def flash_csv(assets_dir, csv_dir, root_dir):
     """
     from netCDF4 import Dataset
 
-    # Inicializando listas p/ salvar dados
-    # glm_data.variables['flash_id'][idx]
-    flash_id_list = []
-    # glm_data.variables[ 'flash_time_offset_of_first_event'][idx]
-    flash_time_offset_of_first_event_list = []
-    # glm_data.variables[ 'flash_time_offset_of_last_event'][idx]
-    flash_time_offset_of_last_event_list = []
-    # glm_data.variables[ 'flash_frame_time_offset_of_first_event'][idx]
-    flash_frame_time_offset_of_first_event_list = []
-    # glm_data.variables[ 'flash_frame_time_offset_of_last_event'][idx]
-    flash_frame_time_offset_of_last_event_list = []
-    # glm_data.variables['flash_lat'][idx]
-    flash_lat_list = []
-    # glm_data.variables['flash_lon'][idx]
-    flash_lon_list = []
-    # glm_data.variables['flash_area'][idx]
-    flash_area_list = []
-    # glm_data.variables['flash_energy'][idx]
-    flash_energy_list = []
-    # glm_data.variables['flash_quality_flag'][idx]
-    flash_quality_flag_list = []
-    # glm_data.variables['flash_time_threshold'][idx]
-    flash_time_threshold_list = []
-    # glm_data.variables['flash_count'][idx]
-    flash_count_list = []
-
     if os.path.exists(assets_dir):
         os.chdir(assets_dir)
     else:
@@ -216,12 +194,15 @@ def flash_csv(assets_dir, csv_dir, root_dir):
 
     files = os.listdir()
     file_idx = 0
+    file_cnt = 0
+    file_quant = len(files)
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
         print('flash')
         print(os.getcwd())
-        print(file)
+        file_cnt += 1
+        print(file, f'{file_cnt/file_quant:.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
@@ -303,30 +284,6 @@ def group_csv(assets_dir, csv_dir, root_dir):
     """
     from netCDF4 import Dataset
 
-    # Inicializando listas p/ salvar dados
-    # glm_data.variables['group_id'][idx]
-    group_id_list = []
-    # glm_data.variables[ 'group_time_offset'][idx]
-    group_time_offset_list = []
-    # glm_data.variables[ 'group_frame_time_offset'][idx]
-    group_frame_time_offset_list = []
-    # glm_data.variables['group_lat'][idx]
-    group_lat_list = []
-    # glm_data.variables['group_lon'][idx]
-    group_lon_list = []
-    # glm_data.variables['group_area'][idx]
-    group_area_list = []
-    # glm_data.variables['group_energy'][idx]
-    group_energy_list = []
-    # glm_data.variables['group_parent_flash_id'][idx]
-    group_parent_flash_id_list = []
-    # glm_data.variables['group_quality_flag'][idx]
-    group_quality_flag_list = []
-    # glm_data.variables['group_time_threshold'][idx]
-    group_time_threshold_list = []
-    # glm_data.variables['group_count'][idx]
-    group_count_list = []
-
     if os.path.exists(assets_dir):
         os.chdir(assets_dir)
     else:
@@ -340,12 +297,15 @@ def group_csv(assets_dir, csv_dir, root_dir):
 
     files = os.listdir()
     file_idx = 0
+    file_cnt = 0
+    file_quant = len(files)
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
         print('group')
         print(os.getcwd())
-        print(file)
+        file_cnt += 1
+        print(file, f'{file_cnt/file_quant:.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
@@ -415,22 +375,6 @@ def event_csv(assets_dir, csv_dir, root_dir):
     """
     from netCDF4 import Dataset
 
-    # Inicializando listas p/ salvar dados
-    # glm_data.variables['event_id'][idx]
-    event_id_list = []
-    # glm_data.variables[ 'event_time_offset'][idx]
-    event_time_offset_list = []
-    # glm_data.variables['event_lat'][idx]
-    event_lat_list = []
-    # glm_data.variables['event_lon'][idx]
-    event_lon_list = []
-    # glm_data.variables['event_energy'][idx]
-    event_energy_list = []
-    # glm_data.variables['event_parent_group_id'][idx]
-    event_parent_group_id_list = []
-    # glm_data.variables['event_count'][idx]
-    event_count_list = []
-
     if os.path.exists(assets_dir):
         os.chdir(assets_dir)
     else:
@@ -444,12 +388,15 @@ def event_csv(assets_dir, csv_dir, root_dir):
 
     files = os.listdir()
     file_idx = 0
+    file_cnt = 0
+    file_quant = len(files)
     for file in files:
 
         # Printa o diretório e arquivo sendo lido
         print('event')
         print(os.getcwd())
-        print(file)
+        file_cnt += 1
+        print(file, f'{file_cnt/file_quant:.2f}% done')
         # Abre o arquivo
         glm_data = Dataset(file)
 
