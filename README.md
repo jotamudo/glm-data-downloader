@@ -1,1 +1,8 @@
-Back end only needs: numpy and s3fs
+# Requirements:
+     * s3fs
+     * netCDF4
+     * pandas
+     * pytest-shutil
+     * numpy
+     * cartopy
+     * matplotlib
