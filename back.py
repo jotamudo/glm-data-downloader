@@ -162,9 +162,12 @@ def merge_csv(dir, csv_dir, name):
     # combine all files in the list
     combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames], ignore_index=True)
     # delete tmp files
-    shutil.rmtree(dir)
+    for tmp_csvs in os.listdir():
+        os.remove(tmp_csvs)
     # export to csv
     os.chdir(csv_dir)
+    # remove tmp directory
+    os.rmdir(dir)
     combined_csv.to_csv(f'{name}.csv')
     # Retorna ao diretório de origem
     os.chdir(root_dir)
