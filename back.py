@@ -209,32 +209,29 @@ def flash_csv(assets_dir, csv_dir, root_dir):
         # Organizando variáveis de tempo
         time_len = len(glm_data.variables['flash_time_offset_of_first_event'])
         tempo_inicio = glm_data.getncattr('time_coverage_start')
-        temp = glm_data.variables['flash_time_offset_of_first_event'][:]
-        # Fazendo lista de tamanho time_len
-        dia_formatado = [int(tempo_inicio[0:4] +
-                         tempo_inicio[5:7] +
-                         tempo_inicio[8:10])] * time_len
+        # temp = glm_data.variables['flash_time_offset_of_first_event'][:]
+        # Fazendo listas de tamanho time_len
+        ano = [int(tempo_inicio[0:4])] * time_len
+        mes = [int(tempo_inicio[5:7])] * time_len
+        dia = [int(tempo_inicio[8:10])] * time_len
         # Convertendo p/ nanossegundos
-        hora_n = int(tempo_inicio[11:13]) * 60 * 60 * (10**9)
-        minuto_n = int(tempo_inicio[14:16]) * 60 * (10**9)
-        segundo_n = int(tempo_inicio[17:19]) * (10**9)
-        nano_times = []
-        for idx in range(time_len):
-            nano_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
-        # Inserindo o número corretamente convertido na lista
-        tempo_exato = []
-        for nanos in nano_times:
-            # Converte p/ timestamp (divisão inteira vai em floor)
-            times = timedelta(seconds=nanos//1000000000)
-            # Adiciona precisão do nano ao fim
-            times = str(times) + '.' + str(int(nanos % 1000000000)).zfill(9)
-            # Divide nos ":"
-            times = times.split(':')
-            time_string = ''
-            for time in times:
-                time_string += time
-            # formato: HHMMSS.SS
-            tempo_exato.append(float(time_string))
+        horas = [int(tempo_inicio[11:13])] * time_len
+        minutos = [int(tempo_inicio[14:16])] * time_len
+        segundos = [int(tempo_inicio[17:19])] * time_len
+        # micro_times = []
+        # for idx in range(time_len):
+            # micro_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
+        # # Inserindo o número corretamente convertido na lista
+        # for micros in micro_times:
+            # # Converte p/ timestamp (divisão inteira vai em floor)
+            # times = timedelta(seconds=micros//1000000)
+            # # Adiciona precisão do micro ao fim
+            # times = str(times) + '.' + str(int(micros % 1000000)).zfill(6)
+            # # Divide nos ":"
+            # times = times.split(':')
+            # hora = int(times[0]) * time_len
+            # minuto = int(times[1]) * time_len
+            # segundo = float(times[2]) * time_len
 
         # Coleta dados
 
@@ -242,29 +239,25 @@ def flash_csv(assets_dir, csv_dir, root_dir):
         flashes = pd.DataFrame.from_dict({
             'flash_id': glm_data.variables['flash_id'][:],
 
+            'Ano': ano,
+            'Mes': mes,
+            'Dia': dia,
+            'Hora': horas,
+            'Minuto': minutos,
+            'Segundo': segundos,
+
             'flash_time_offset_of_first_event':
             glm_data.variables['flash_time_offset_of_first_event'][:],
 
             'flash_time_offset_of_last_event':
             glm_data.variables['flash_time_offset_of_last_event'][:],
 
-            'flash_frame_time_offset_of_first_event':
-            glm_data.variables['flash_frame_time_offset_of_first_event'][:],
-
-            'flash_frame_time_offset_of_last_event':
-            glm_data.variables['flash_frame_time_offset_of_last_event'][:],
-
             'flash_lat': glm_data.variables['flash_lat'][:],
             'flash_lon': glm_data.variables['flash_lon'][:],
             'flash_area': glm_data.variables['flash_area'][:],
             'flash_energy': glm_data.variables['flash_energy'][:],
             'flash_quality_flag': glm_data.variables['flash_quality_flag'][:],
-            'flash_time_threshold': glm_data.variables['flash_time_threshold'][:],
-            'flash_count': glm_data.variables['flash_count'][:],
-            'Data': dia_formatado,
-            'Tempo_exato': tempo_exato,
         })
-        # os.chdir(csv_dir)
         os.chdir(tmp_dir)
         flashes.to_csv(f'flash_{file_idx}.csv')
         file_idx += 1
@@ -312,49 +305,46 @@ def group_csv(assets_dir, csv_dir, root_dir):
         # Organizando variáveis de tempo
         time_len = len(glm_data.variables['group_time_offset'])
         tempo_inicio = glm_data.getncattr('time_coverage_start')
-        temp = glm_data.variables['group_time_offset'][:]
-        # Fazendo lista de tamanho time_len
-        dia_formatado = [int(tempo_inicio[0:4] +
-                         tempo_inicio[5:7] +
-                         tempo_inicio[8:10])] * time_len
-        # Convertendo p/ nanossegundos
-        hora_n = int(tempo_inicio[11:13]) * 60 * 60 * (10**9)
-        minuto_n = int(tempo_inicio[14:16]) * 60 * (10**9)
-        segundo_n = int(tempo_inicio[17:19]) * (10**9)
-        nano_times = []
-        for idx in range(time_len):
-            nano_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
+        # temp = glm_data.variables['group_time_offset'][:]
+        ano = [int(tempo_inicio[0:4])] * time_len
+        mes = [int(tempo_inicio[5:7])] * time_len
+        dia = [int(tempo_inicio[8:10])] * time_len
+        # convertendo p/ nanossegundos
+        horas = [int(tempo_inicio[11:13])] * time_len
+        minutos = [int(tempo_inicio[14:16])] * time_len
+        segundos = [int(tempo_inicio[17:19])] * time_len
+        # micro_times = []
+        # for idx in range(time_len):
+            # micro_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
         # Inserindo o número corretamente convertido na lista
-        tempo_exato = []
-        for nanos in nano_times:
-            # Converte p/ timestamp (divisão inteira vai em floor)
-            times = timedelta(seconds=nanos//1000000000)
-            # Adiciona precisão do nano ao fim
-            times = str(times) + '.' + str(int(nanos % 1000000000)).zfill(9)
-            # Divide nos ":"
-            times = times.split(':')
-            time_string = ''
-            for time in times:
-                time_string += time
-            # formato: HHMMSS.SS
-            tempo_exato.append(float(time_string))
+        # for micros in micro_times:
+            # # Converte p/ timestamp (divisão inteira vai em floor)
+            # times = timedelta(seconds=micros//1000000)
+            # # Adiciona precisão do micro ao fim
+            # times = str(times) + '.' + str(int(micros % 1000000)).zfill(6)
+            # # Divide nos ":"
+            # times = times.split(':')
+            # hora = int(times[0]) * time_len
+            # minuto = int(times[1]) * time_len
+            # segundo = float(times[2]) * time_len
 
         # Coleta dados
         # Cria Dataframe com as listas p/ exportar em .csv
         groups = pd.DataFrame.from_dict({
             'group_id': glm_data.variables['group_id'][:],
+            'Ano': ano,
+            'Mes': mes,
+            'Dia': dia,
+            'Hora': horas,
+            'Minuto': minutos,
+            'Segundo': segundos,
             'group_time_offset': glm_data.variables['group_time_offset'][:],
-            'group_frame_time_offset': glm_data.variables['group_frame_time_offset'][:],
             'group_lat': glm_data.variables['group_lat'][:],
             'group_lon': glm_data.variables['group_lon'][:],
             'group_area': glm_data.variables['group_area'][:],
             'group_energy': glm_data.variables['group_energy'][:],
             'group_parent_flash_id': glm_data.variables['group_parent_flash_id'][:],
             'group_quality_flag': glm_data.variables['group_quality_flag'][:],
-            'group_time_threshold': glm_data.variables['group_time_threshold'][:],
-            'group_count':glm_data.variables['group_count'][:],
-            'Data': dia_formatado,
-            'Tempo_exato': tempo_exato,
         })
         os.chdir(tmp_dir)
         groups.to_csv(f'group_{file_idx}.csv')
@@ -484,7 +474,8 @@ def create_csv(year, month, day, hour, category, root_dir=os.getcwd()):
         os.mkdir(csv_dir)
     flash_csv(assets_dir, csv_dir, root_dir)
     group_csv(assets_dir, csv_dir, root_dir)
-    event_csv(assets_dir, csv_dir, root_dir)
+    # Disabled for the time being
+    # event_csv(assets_dir, csv_dir, root_dir)
 
 
 def data_acces(params):
