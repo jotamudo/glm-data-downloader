@@ -478,7 +478,7 @@ def create_csv(year, month, day, hour, category, root_dir=os.getcwd()):
     # event_csv(assets_dir, csv_dir, root_dir)
 
 
-def data_acces(params):
+def data_acces(dic_start_params, dic_end_params):
     """
     Utilizes create_csv to access data on assets folder and generate csv
     files
@@ -487,11 +487,30 @@ def data_acces(params):
     :returns: nothing
 
     """
-    hour = params['hour']
-    day = params['day']
-    month = params['month']
-    year = params['year']
-    create_csv(year, month, day, hour, 'flash')
+    try:
+        if dic_start_params['year'] == dic_end_params['year'] and \
+           dic_start_params['month'] == dic_end_params['month']:
+            year = int(dic_start_params['year'])
+            month = int(dic_start_params['month'])
+        else:
+            raise ValueError
+    # Limitando por hora p/ manter controle do backend
+    except ValueError:
+        print('Ano ou mês de início e de fim diferem')
+    day_s = int(dic_start_params['day'])
+    day_e = int(dic_end_params['day'])
+    hour_s = int(dic_start_params['hour'])
+    hour_e = int(dic_end_params['hour'])
+
+    # Preparando iterables p/ for
+    if day_s != day_e:
+        days = range(day_s, day_e + 1)
+    else:
+        days = [day_s]
+    hours = range(hour_s, hour_e + 1)
+    for day in days:
+        for hour in hours:
+            create_csv(year, month, day, hour, 'flash')
 
 
 def generate_map(dic_start_params, dic_end_params, radius, center,
