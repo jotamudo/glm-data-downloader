@@ -4,14 +4,14 @@ from time import time
 
 start_params = {
     'hour': '14',
-    'day': '23',
+    'day': '24',
     'month': '2',
     'year': '2019'
 }
 
 end_params = {
     'hour': '15',
-    'day': '23',
+    'day': '24',
     'month': '2',
     'year': '2019'
 }
@@ -25,8 +25,8 @@ special_params = {
 
 tic = time()
 
-# back.assets_download(start_params, end_params)
-back.data_acces(start_params, end_params)
+# back.assets_download(start_params, start_params)
+back.data_acces(start_params, start_params)
 # back.generate_map(start_params, start_params, 1000, (-1.474012, -48.457615))
 tac = time()
 

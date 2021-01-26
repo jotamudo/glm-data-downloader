@@ -1,6 +1,6 @@
 """
 
-TODO: Implementar geração de mapa baseado em csv gerado
+TODO: Implementar geração de mapa baseado em csvs gerado
 """
 
 import os
@@ -160,7 +160,8 @@ def merge_csv(dir, csv_dir, name):
 
     all_filenames = [i for i in glob(f'{name}*')]
     # combine all files in the list
-    combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames], ignore_index=True)
+    combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames],
+                             ignore_index=False)
     # delete tmp files
     for tmp_csvs in os.listdir():
         os.remove(tmp_csvs)
@@ -168,10 +169,14 @@ def merge_csv(dir, csv_dir, name):
     os.chdir(csv_dir)
     # remove tmp directory
     os.rmdir(dir)
-    combined_csv.to_csv(f'{name}.csv')
+    # Remove coluna 'Unnamed'
+    combined_csv = combined_csv.loc[:, ~combined_csv.columns.str.contains('^Unnamed')]
+    # Sorting do dataframe pelo id
+    combined_csv = combined_csv.sort_values(f'{name}_id')
+    # Remove coluna de índices
+    combined_csv.to_csv(f'{name}.csv', index=False)
     # Retorna ao diretório de origem
     os.chdir(root_dir)
-    pass
 
 
 def flash_csv(assets_dir, csv_dir, root_dir):
@@ -210,41 +215,41 @@ def flash_csv(assets_dir, csv_dir, root_dir):
         glm_data = Dataset(file)
 
         # Organizando variáveis de tempo
-        time_len = len(glm_data.variables['flash_time_offset_of_first_event'])
         tempo_inicio = glm_data.getncattr('time_coverage_start')
-        # temp = glm_data.variables['flash_time_offset_of_first_event'][:]
+        time_offsets = glm_data.variables['flash_time_offset_of_first_event'][:]
         # Fazendo listas de tamanho time_len
-        ano = [int(tempo_inicio[0:4])] * time_len
-        mes = [int(tempo_inicio[5:7])] * time_len
-        dia = [int(tempo_inicio[8:10])] * time_len
+        ano = int(tempo_inicio[0:4])
+        anos = []
+        mes = int(tempo_inicio[5:7])
+        meses = []
+        dia = int(tempo_inicio[8:10])
+        dias = []
         # Convertendo p/ nanossegundos
-        horas = [int(tempo_inicio[11:13])] * time_len
-        minutos = [int(tempo_inicio[14:16])] * time_len
-        segundos = [int(tempo_inicio[17:19])] * time_len
-        # micro_times = []
-        # for idx in range(time_len):
-            # micro_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
-        # # Inserindo o número corretamente convertido na lista
-        # for micros in micro_times:
-            # # Converte p/ timestamp (divisão inteira vai em floor)
-            # times = timedelta(seconds=micros//1000000)
-            # # Adiciona precisão do micro ao fim
-            # times = str(times) + '.' + str(int(micros % 1000000)).zfill(6)
-            # # Divide nos ":"
-            # times = times.split(':')
-            # hora = int(times[0]) * time_len
-            # minuto = int(times[1]) * time_len
-            # segundo = float(times[2]) * time_len
-
-        # Coleta dados
+        hora = int(tempo_inicio[11:13])
+        horas = []
+        minuto = int(tempo_inicio[14:16])
+        minutos = []
+        segundo = int(tempo_inicio[17:19])
+        segundos = []
+        data = datetime(ano, mes, dia, hora, minuto, segundo)
+        for offset in time_offsets:
+            microsseconds = int(offset * 1000000)
+            conv_offset = timedelta(microseconds=microsseconds)
+            time = data + conv_offset
+            anos.append(time.year)
+            meses.append(time.month)
+            dias.append(time.day)
+            horas.append(time.hour)
+            minutos.append(time.minute)
+            segundos.append(time.second + (time.microsecond / 1000000))
 
         # Cria Dataframe com as listas p/ exportar em .csv
         flashes = pd.DataFrame.from_dict({
             'flash_id': glm_data.variables['flash_id'][:],
 
-            'Ano': ano,
-            'Mes': mes,
-            'Dia': dia,
+            'Ano': anos,
+            'Mes': meses,
+            'Dia': dias,
             'Hora': horas,
             'Minuto': minutos,
             'Segundo': segundos,
@@ -306,38 +311,39 @@ def group_csv(assets_dir, csv_dir, root_dir):
         glm_data = Dataset(file)
 
         # Organizando variáveis de tempo
-        time_len = len(glm_data.variables['group_time_offset'])
         tempo_inicio = glm_data.getncattr('time_coverage_start')
-        # temp = glm_data.variables['group_time_offset'][:]
-        ano = [int(tempo_inicio[0:4])] * time_len
-        mes = [int(tempo_inicio[5:7])] * time_len
-        dia = [int(tempo_inicio[8:10])] * time_len
-        # convertendo p/ nanossegundos
-        horas = [int(tempo_inicio[11:13])] * time_len
-        minutos = [int(tempo_inicio[14:16])] * time_len
-        segundos = [int(tempo_inicio[17:19])] * time_len
-        # micro_times = []
-        # for idx in range(time_len):
-            # micro_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
-        # Inserindo o número corretamente convertido na lista
-        # for micros in micro_times:
-            # # Converte p/ timestamp (divisão inteira vai em floor)
-            # times = timedelta(seconds=micros//1000000)
-            # # Adiciona precisão do micro ao fim
-            # times = str(times) + '.' + str(int(micros % 1000000)).zfill(6)
-            # # Divide nos ":"
-            # times = times.split(':')
-            # hora = int(times[0]) * time_len
-            # minuto = int(times[1]) * time_len
-            # segundo = float(times[2]) * time_len
-
+        time_offsets = glm_data.variables['group_time_offset'][:]
+        ano = int(tempo_inicio[0:4])
+        anos = []
+        mes = int(tempo_inicio[5:7])
+        meses = []
+        dia = int(tempo_inicio[8:10])
+        dias = []
+        # Convertendo p/ nanossegundos
+        hora = int(tempo_inicio[11:13])
+        horas = []
+        minuto = int(tempo_inicio[14:16])
+        minutos = []
+        segundo = int(tempo_inicio[17:19])
+        segundos = []
+        data = datetime(ano, mes, dia, hora, minuto, segundo)
+        for offset in time_offsets:
+            microsseconds = int(offset * 1000000)
+            conv_offset = timedelta(microseconds=microsseconds)
+            time = data + conv_offset
+            anos.append(time.year)
+            meses.append(time.month)
+            dias.append(time.day)
+            horas.append(time.hour)
+            minutos.append(time.minute)
+            segundos.append(time.second + (time.microsecond / 1000000))
         # Coleta dados
         # Cria Dataframe com as listas p/ exportar em .csv
         groups = pd.DataFrame.from_dict({
             'group_id': glm_data.variables['group_id'][:],
-            'Ano': ano,
-            'Mes': mes,
-            'Dia': dia,
+            'Ano': anos,
+            'Mes': meses,
+            'Dia': dias,
             'Hora': horas,
             'Minuto': minutos,
             'Segundo': segundos,
@@ -578,8 +584,8 @@ def generate_map(dic_start_params, dic_end_params, radius, center,
     for day in days:
         for hour in hours:
             # Acessa csv
-            file = f'{year}_{month}_{day}_{hour}.csv'
-            data = pd.read_csv(os.path.join(csv_dir, file))
+            csv_folder = f'{year}_{month}_{day}_{hour}'
+            data = pd.read_csv(os.path.join(csv_dir, csv_folder, f'{category}.csv'))
             # Extrai dados e transforma p/ lista
             lats = list(data[f'{category}_lat'])
             lons = list(data[f'{category}_lon'])
