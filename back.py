@@ -145,41 +145,44 @@ def csv_folders(year, month, day, hour, root_dir=os.getcwd()):
     return os.path.join(root_dir, folder_name)
 
 
-def merge_csv(dir, csv_dir, name):
+def merge_csv(tmp_dir, csv_dir, categories):
     """
     Merges csvs in a folder
 
     :dir: TODO
-    :name: TODO
+    :category: TODO
     :returns: TODO
 
     """
     from glob import glob
     root_dir = os.getcwd()
-    os.chdir(dir)
+    os.chdir(tmp_dir)
 
-    all_filenames = [i for i in glob(f'{name}*')]
-    # combine all files in the list
-    combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames],
-                             ignore_index=False)
+    for category in categories:
+        all_filenames = [i for i in glob(f'{category}*')]
+        # combine all files in the list
+        combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames],
+                                 ignore_index=False)
+        # export to csv
+        os.chdir(csv_dir)
+        # Remove coluna 'Unnamed'
+        combined_csv = combined_csv.loc[:, ~combined_csv.columns.str.contains('^Unnamed')]
+        # Sorting do dataframe pelo id
+        combined_csv = combined_csv.sort_values(f'{category}_id')
+        # Remove coluna de índices
+        combined_csv.to_csv(f'{category}.csv', index=False)
+        os.chdir(tmp_dir)
     # delete tmp files
     for tmp_csvs in os.listdir():
         os.remove(tmp_csvs)
-    # export to csv
-    os.chdir(csv_dir)
     # remove tmp directory
-    os.rmdir(dir)
-    # Remove coluna 'Unnamed'
-    combined_csv = combined_csv.loc[:, ~combined_csv.columns.str.contains('^Unnamed')]
-    # Sorting do dataframe pelo id
-    combined_csv = combined_csv.sort_values(f'{name}_id')
-    # Remove coluna de índices
-    combined_csv.to_csv(f'{name}.csv', index=False)
+    os.rmdir(tmp_dir)
+
     # Retorna ao diretório de origem
     os.chdir(root_dir)
 
 
-def flash_csv(assets_dir, csv_dir, root_dir):
+def flash_csv(file, file_idx, tmp_dir, root_dir):
     """
     Function generates csv of flash data based on netCDF4.Dataset given
 
@@ -189,93 +192,69 @@ def flash_csv(assets_dir, csv_dir, root_dir):
     """
     from netCDF4 import Dataset
 
-    if os.path.exists(assets_dir):
-        os.chdir(assets_dir)
-    else:
-        print('assets_dir não existe')
-        return False
+    # Abre o arquivo
+    glm_data = Dataset(file)
 
-    # Cria pasta tmp p/ guardar arquivos temporários
-    tmp_dir = os.path.join(csv_dir, 'tmp')
-    if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
+    # Organizando variáveis de tempo
+    # Time format : YYYY-MM-DDTHH:MM:SS.S
+    tempo_inicio = glm_data.getncattr('time_coverage_start')
+    time_offsets = glm_data.variables['flash_time_offset_of_first_event'][:]
+    ano = int(tempo_inicio[0:4])
+    anos = []
+    mes = int(tempo_inicio[5:7])
+    meses = []
+    dia = int(tempo_inicio[8:10])
+    dias = []
+    hora = int(tempo_inicio[11:13])
+    horas = []
+    minuto = int(tempo_inicio[14:16])
+    minutos = []
+    segundo = int(tempo_inicio[17:19])
+    segundos = []
+    data = datetime(ano, mes, dia, hora, minuto, segundo)
+    for offset in time_offsets:
+        microsseconds = int(offset * 1000000)
+        conv_offset = timedelta(microseconds=microsseconds)
+        time = data + conv_offset
+        anos.append(time.year)
+        meses.append(time.month)
+        dias.append(time.day)
+        horas.append(time.hour)
+        minutos.append(time.minute)
+        segundos.append(time.second + (time.microsecond / 1000000))
 
-    files = os.listdir()
-    file_idx = 0
-    file_cnt = 0
-    file_quant = len(files)
-    for file in files:
+    # Cria Dataframe com as listas p/ exportar em .csv
+    flashes = pd.DataFrame.from_dict({
+        'flash_id': glm_data.variables['flash_id'][:],
 
-        # Printa o diretório e arquivo sendo lido
-        print('flash')
-        print(os.getcwd())
-        file_cnt += 1
-        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
-        # Abre o arquivo
-        glm_data = Dataset(file)
+        'Ano': anos,
+        'Mes': meses,
+        'Dia': dias,
+        'Hora': horas,
+        'Minuto': minutos,
+        'Segundo': segundos,
 
-        # Organizando variáveis de tempo
-        tempo_inicio = glm_data.getncattr('time_coverage_start')
-        time_offsets = glm_data.variables['flash_time_offset_of_first_event'][:]
-        # Fazendo listas de tamanho time_len
-        ano = int(tempo_inicio[0:4])
-        anos = []
-        mes = int(tempo_inicio[5:7])
-        meses = []
-        dia = int(tempo_inicio[8:10])
-        dias = []
-        # Convertendo p/ nanossegundos
-        hora = int(tempo_inicio[11:13])
-        horas = []
-        minuto = int(tempo_inicio[14:16])
-        minutos = []
-        segundo = int(tempo_inicio[17:19])
-        segundos = []
-        data = datetime(ano, mes, dia, hora, minuto, segundo)
-        for offset in time_offsets:
-            microsseconds = int(offset * 1000000)
-            conv_offset = timedelta(microseconds=microsseconds)
-            time = data + conv_offset
-            anos.append(time.year)
-            meses.append(time.month)
-            dias.append(time.day)
-            horas.append(time.hour)
-            minutos.append(time.minute)
-            segundos.append(time.second + (time.microsecond / 1000000))
+        'flash_time_offset_of_first_event':
+        glm_data.variables['flash_time_offset_of_first_event'][:],
 
-        # Cria Dataframe com as listas p/ exportar em .csv
-        flashes = pd.DataFrame.from_dict({
-            'flash_id': glm_data.variables['flash_id'][:],
+        'flash_time_offset_of_last_event':
+        glm_data.variables['flash_time_offset_of_last_event'][:],
 
-            'Ano': anos,
-            'Mes': meses,
-            'Dia': dias,
-            'Hora': horas,
-            'Minuto': minutos,
-            'Segundo': segundos,
-
-            'flash_time_offset_of_first_event':
-            glm_data.variables['flash_time_offset_of_first_event'][:],
-
-            'flash_time_offset_of_last_event':
-            glm_data.variables['flash_time_offset_of_last_event'][:],
-
-            'flash_lat': glm_data.variables['flash_lat'][:],
-            'flash_lon': glm_data.variables['flash_lon'][:],
-            'flash_area': glm_data.variables['flash_area'][:],
-            'flash_energy': glm_data.variables['flash_energy'][:],
-            'flash_quality_flag': glm_data.variables['flash_quality_flag'][:],
-        })
-        os.chdir(tmp_dir)
-        flashes.to_csv(f'flash_{file_idx}.csv')
-        file_idx += 1
-        os.chdir(assets_dir)
-    merge_csv(tmp_dir, csv_dir, 'flash')
+        'flash_lat': glm_data.variables['flash_lat'][:],
+        'flash_lon': glm_data.variables['flash_lon'][:],
+        'flash_area': glm_data.variables['flash_area'][:],
+        'flash_energy': glm_data.variables['flash_energy'][:],
+        'flash_quality_flag': glm_data.variables['flash_quality_flag'][:],
+    })
+    # Fecha o Dataset
+    glm_data.close()
+    os.chdir(tmp_dir)
+    flashes.to_csv(f'flash_{file_idx}.csv')
     # Retorna ao diretório raiz
     os.chdir(root_dir)
 
 
-def group_csv(assets_dir, csv_dir, root_dir):
+def group_csv(file, file_idx, tmp_dir, root_dir):
     """
     Function generates csv of flash data based on netCDF4.Dataset given
 
@@ -285,81 +264,58 @@ def group_csv(assets_dir, csv_dir, root_dir):
     """
     from netCDF4 import Dataset
 
-    if os.path.exists(assets_dir):
-        os.chdir(assets_dir)
-    else:
-        print('assets_dir não existe')
-        return
+    # Abre o arquivo
+    glm_data = Dataset(file)
 
-    # Cria pasta tmp p/ guardar arquivos temporários
-    tmp_dir = os.path.join(csv_dir, 'tmp')
-    if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
-
-    files = os.listdir()
-    file_idx = 0
-    file_cnt = 0
-    file_quant = len(files)
-    for file in files:
-
-        # Printa o diretório e arquivo sendo lido
-        print('group')
-        print(os.getcwd())
-        file_cnt += 1
-        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
-        # Abre o arquivo
-        glm_data = Dataset(file)
-
-        # Organizando variáveis de tempo
-        tempo_inicio = glm_data.getncattr('time_coverage_start')
-        time_offsets = glm_data.variables['group_time_offset'][:]
-        ano = int(tempo_inicio[0:4])
-        anos = []
-        mes = int(tempo_inicio[5:7])
-        meses = []
-        dia = int(tempo_inicio[8:10])
-        dias = []
-        # Convertendo p/ nanossegundos
-        hora = int(tempo_inicio[11:13])
-        horas = []
-        minuto = int(tempo_inicio[14:16])
-        minutos = []
-        segundo = int(tempo_inicio[17:19])
-        segundos = []
-        data = datetime(ano, mes, dia, hora, minuto, segundo)
-        for offset in time_offsets:
-            microsseconds = int(offset * 1000000)
-            conv_offset = timedelta(microseconds=microsseconds)
-            time = data + conv_offset
-            anos.append(time.year)
-            meses.append(time.month)
-            dias.append(time.day)
-            horas.append(time.hour)
-            minutos.append(time.minute)
-            segundos.append(time.second + (time.microsecond / 1000000))
-        # Coleta dados
-        # Cria Dataframe com as listas p/ exportar em .csv
-        groups = pd.DataFrame.from_dict({
-            'group_id': glm_data.variables['group_id'][:],
-            'Ano': anos,
-            'Mes': meses,
-            'Dia': dias,
-            'Hora': horas,
-            'Minuto': minutos,
-            'Segundo': segundos,
-            'group_time_offset': glm_data.variables['group_time_offset'][:],
-            'group_lat': glm_data.variables['group_lat'][:],
-            'group_lon': glm_data.variables['group_lon'][:],
-            'group_area': glm_data.variables['group_area'][:],
-            'group_energy': glm_data.variables['group_energy'][:],
-            'group_parent_flash_id': glm_data.variables['group_parent_flash_id'][:],
-            'group_quality_flag': glm_data.variables['group_quality_flag'][:],
-        })
-        os.chdir(tmp_dir)
-        groups.to_csv(f'group_{file_idx}.csv')
-        file_idx += 1
-        os.chdir(assets_dir)
-    merge_csv(tmp_dir, csv_dir, 'group')
+    # Organizando variáveis de tempo
+    tempo_inicio = glm_data.getncattr('time_coverage_start')
+    time_offsets = glm_data.variables['group_time_offset'][:]
+    ano = int(tempo_inicio[0:4])
+    anos = []
+    mes = int(tempo_inicio[5:7])
+    meses = []
+    dia = int(tempo_inicio[8:10])
+    dias = []
+    # Convertendo p/ nanossegundos
+    hora = int(tempo_inicio[11:13])
+    horas = []
+    minuto = int(tempo_inicio[14:16])
+    minutos = []
+    segundo = int(tempo_inicio[17:19])
+    segundos = []
+    data = datetime(ano, mes, dia, hora, minuto, segundo)
+    for offset in time_offsets:
+        microsseconds = int(offset * 1000000)
+        conv_offset = timedelta(microseconds=microsseconds)
+        time = data + conv_offset
+        anos.append(time.year)
+        meses.append(time.month)
+        dias.append(time.day)
+        horas.append(time.hour)
+        minutos.append(time.minute)
+        segundos.append(time.second + (time.microsecond / 1000000))
+    # Coleta dados
+    # Cria Dataframe com as listas p/ exportar em .csv
+    groups = pd.DataFrame.from_dict({
+        'group_id': glm_data.variables['group_id'][:],
+        'Ano': anos,
+        'Mes': meses,
+        'Dia': dias,
+        'Hora': horas,
+        'Minuto': minutos,
+        'Segundo': segundos,
+        'group_time_offset': glm_data.variables['group_time_offset'][:],
+        'group_lat': glm_data.variables['group_lat'][:],
+        'group_lon': glm_data.variables['group_lon'][:],
+        'group_area': glm_data.variables['group_area'][:],
+        'group_energy': glm_data.variables['group_energy'][:],
+        'group_parent_flash_id': glm_data.variables['group_parent_flash_id'][:],
+        'group_quality_flag': glm_data.variables['group_quality_flag'][:],
+    })
+    # Fecha dataset
+    glm_data.close()
+    os.chdir(tmp_dir)
+    groups.to_csv(f'group_{file_idx}.csv')
     # Retorna ao diretório raiz
     os.chdir(root_dir)
 
@@ -452,7 +408,7 @@ def event_csv(assets_dir, csv_dir, root_dir):
     os.chdir(root_dir)
 
 
-def create_csv(year, month, day, hour, category, root_dir=os.getcwd()):
+def create_csv(year, month, day, hour, root_dir=os.getcwd()):
     """
     Function manipulates .nc files located at args and creates a .csv
     based on it's parameters
@@ -468,21 +424,40 @@ def create_csv(year, month, day, hour, category, root_dir=os.getcwd()):
     :returns: TODO
 
     """
-    # Assegura que está procurando pelos dados certos
-    categories = ['event', 'flash', 'group']
+    # Pasta com os .nc
+    assets_dir = os.path.join(root_dir, 'assets',
+                              str(year), str(month), str(day), str(hour))
 
-    if category not in categories:
-        print('categoria inválida')
+    if not os.path.exists(assets_dir):
+        print('assets_dir não existe')
         return
 
-    # Pasta com os .nc
-    assets_dir = os.path.join(root_dir,'assets',
-                              str(year), str(month), str(day), str(hour))
+    assets = os.listdir(assets_dir)
+    file_quant = len(os.listdir(assets_dir))
+    # Pasta de destino
     csv_dir = os.path.join(root_dir, 'csv', f'{year}_{month}_{day}_{hour}')
+    # Pasta temporária
+    tmp_dir = os.path.join(csv_dir, 'tmp')
     if not os.path.exists(csv_dir):
         os.mkdir(csv_dir)
-    flash_csv(assets_dir, csv_dir, root_dir)
-    group_csv(assets_dir, csv_dir, root_dir)
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
+
+    # Cria os csvs
+    file_cnt = 0
+    file_idx = 0
+    for file in assets:
+        file_path = os.path.join(assets_dir, file)
+        file_cnt += 1
+        file_idx += 1
+        flash_csv(file_path, file_idx, tmp_dir, root_dir)
+        group_csv(file_path, file_idx, tmp_dir, root_dir)
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
+        pass
+
+    categories = ['flash', 'group']
+    merge_csv(tmp_dir, csv_dir, categories)
+
     # Disabled for the time being
     # event_csv(assets_dir, csv_dir, root_dir)
 
@@ -519,7 +494,7 @@ def data_acces(dic_start_params, dic_end_params):
     hours = range(hour_s, hour_e + 1)
     for day in days:
         for hour in hours:
-            create_csv(year, month, day, hour, 'flash')
+            create_csv(year, month, day, hour)
 
 
 def generate_map(dic_start_params, dic_end_params, radius, center,
@@ -617,4 +592,3 @@ def generate_map(dic_start_params, dic_end_params, radius, center,
     # ax.set_extent(extent)
     plt.savefig('mapa.png')
     plt.show()
-
