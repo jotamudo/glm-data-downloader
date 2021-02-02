@@ -174,6 +174,8 @@ def merge_csv(tmp_dir, csv_dir, categories):
     # delete tmp files
     for tmp_csvs in os.listdir():
         os.remove(tmp_csvs)
+    # windows e ntfs...
+    os.chdir(csv_dir)
     # remove tmp directory
     os.rmdir(tmp_dir)
 
