@@ -144,7 +144,7 @@ def csv_folders(year, month, day, hour, root_dir=os.getcwd()):
     return os.path.join(root_dir, folder_name)
 
 
-def merge_csv(tmp_dir, csv_dir, categories):
+def merge_csv(tmp_dir, csv_dir, categories, csv_time):
     """
     Merges csvs in a folder
 
@@ -169,7 +169,7 @@ def merge_csv(tmp_dir, csv_dir, categories):
         # Sorting do dataframe pelo id
         combined_csv = combined_csv.sort_values(f'{category}_id')
         # Remove coluna de índices
-        combined_csv.to_csv(f'{category}.csv', index=False)
+        combined_csv.to_csv(f'{category}_{csv_time}.csv', index=False)
         os.chdir(tmp_dir)
     # delete tmp files
     for tmp_csvs in os.listdir():
@@ -409,7 +409,8 @@ def event_csv(assets_dir, csv_dir, root_dir):
     os.chdir(root_dir)
 
 
-def create_csv(year, month, day, hour, root_dir=os.getcwd()):
+def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
+               lat1=-14, lat2=8, lon1=-45, lon2=-79):
     """
     Function manipulates .nc files located at args and creates a .csv
     based on it's parameters
@@ -436,7 +437,8 @@ def create_csv(year, month, day, hour, root_dir=os.getcwd()):
     assets = os.listdir(assets_dir)
     file_quant = len(os.listdir(assets_dir))
     # Pasta de destino
-    csv_dir = os.path.join(root_dir, 'csv', f'{year}_{month}_{day}_{hour}')
+    csv_time = f'{year}_{month}_{day}_{hour}'
+    csv_dir = os.path.join(root_dir, 'csv', csv_time)
     # Pasta temporária
     tmp_dir = os.path.join(csv_dir, 'tmp')
     if not os.path.exists(csv_dir):
@@ -447,23 +449,36 @@ def create_csv(year, month, day, hour, root_dir=os.getcwd()):
     # Cria os csvs
     file_cnt = 0
     file_idx = 0
+    csv_functions = {
+            'flash': flash_csv,
+            'group': group_csv,
+            'event': event_csv
+    }
     for file in assets:
         file_path = os.path.join(assets_dir, file)
-        file_cnt += 1
         file_idx += 1
-        flash_csv(file_path, file_idx, tmp_dir, root_dir)
-        group_csv(file_path, file_idx, tmp_dir, root_dir)
-        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
+        file_cnt += 1
+        for category in categories:
+            csv_functions[category](file_path, file_idx, tmp_dir, root_dir)
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done', end='\r')
         pass
 
     categories = ['flash', 'group']
-    merge_csv(tmp_dir, csv_dir, categories)
+    merge_csv(tmp_dir, csv_dir, categories, csv_time)
+    csv_filter(csv_dir, csv_time, categories,lat1=lat1, lat2=lat2, lon1=lon1,
+               lon2=lon2)
 
     # Disabled for the time being
     # event_csv(assets_dir, csv_dir, root_dir)
 
 
-def data_acces(dic_start_params, dic_end_params):
+def data_acces(dic_start_params, dic_end_params, categories,
+        dic_coordinates={
+            'lat1': -14,
+            'lat2': 8,
+            'lon1': -45,
+            'lon2':-79
+            }):
     """
     Utilizes create_csv to access data on assets folder and generate csv
     files
@@ -493,9 +508,105 @@ def data_acces(dic_start_params, dic_end_params):
     else:
         days = [day_s]
     hours = range(hour_s, hour_e + 1)
+
+    # Coodenadas p/ recorte:
+    lat1 = dic_coordinates['lat1']
+    lat2 = dic_coordinates['lat2']
+    lon1 = dic_coordinates['lon1']
+    lon2 = dic_coordinates['lon2']
     for day in days:
         for hour in hours:
-            create_csv(year, month, day, hour)
+            create_csv(year, month, day, hour, categories,
+                       lat1=lat1, lat2=lat2, lon1=lon1, lon2=lon2)
+
+
+def csv_filter(csv_path, csv_time, categories,
+               lat1=-14, lat2=8, lon1=-45, lon2=-79):
+    """
+    Uses data to filter out csv
+
+    :csv_path: TODO
+    :coordinates: TODO
+    :radius: TODO
+    :Center: TODO
+    :returns: TODO
+
+    """
+    import csv
+    # if coordinates == None and radius == None and center == None:
+        # print('Invalid filter')
+        # return
+    if not os.path.exists(csv_path):
+        print('Files does\'nt exist')
+        return
+    if 'flash' in categories:
+        # Colunas:
+        # flash_id,
+        # Ano,
+        # Mes,
+        # Dia,
+        # Hora,
+        # Minuto,
+        # Segundo,
+        # flash_time_offset_of_first_event,
+        # flash_time_offset_of_last_event,
+        # flash_lat,
+        # flash_lon,
+        # flash_area,
+        # flash_energy,
+        # flash_quality_flag
+        flash_lat = 9
+        flash_lon = 10
+        orig_csv = os.path.join(csv_path, f'flash_{csv_time}.csv')
+        filter_csv = os.path.join(csv_path, f'flash-filtered_{csv_time}.csv')
+        in_square = in_square_maker(lat1, lat2, lon1, lon2)
+        with open(orig_csv, 'r', newline='') as inp,\
+        open(filter_csv, 'w', newline='') as out:
+            write_h = csv.writer(out)
+            read_h = csv.reader(inp)
+            next(read_h)
+            for row in read_h:
+                if in_square(float(row[flash_lat]), float(row[flash_lon])):
+                    write_h.writerow(row)
+        # os.remove(orig_csv)
+
+    if 'group' in categories:
+        # Colunas:
+        # group_id,
+        # Ano,
+        # Mes,
+        # Dia,
+        # Hora,
+        # Minuto,
+        # Segundo,
+        # group_time_offset,
+        # group_lat,
+        # group_lon,
+        # group_area,
+        # group_energy,
+        # group_parent_flash_id,
+        # group_quality_flag
+        group_lat = 8
+        group_lon = 9
+        orig_csv = os.path.join(csv_path, f'group_{csv_time}.csv')
+        filter_csv = os.path.join(csv_path, f'group-filtered_{csv_time}.csv')
+        in_square = in_square_maker(lat1, lat2, lon1, lon2)
+        with open(orig_csv, 'r', newline='') as inp,\
+        open(filter_csv, 'w', newline='') as out:
+            write_h = csv.writer(out)
+            read_h = csv.reader(inp)
+            next(read_h)
+            for row in read_h:
+                print(float(row[group_lat]), float(row[group_lon]))
+                if in_square(float(row[group_lat]), float(row[group_lon])):
+                    write_h.writerow(row)
+        # os.remove(orig_csv)
+
+
+def in_square_maker(lat1, lat2, lon1, lon2):
+    def in_square(lat,lon):
+        return lat1 <= lat <= lat2 and lon1 <= lon <= lon2
+    return in_square
 
 
 def generate_map(dic_start_params, dic_end_params, radius, center,
