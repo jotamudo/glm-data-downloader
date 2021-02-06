@@ -474,10 +474,10 @@ def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
 
 def data_acces(dic_start_params, dic_end_params, categories,
         dic_coordinates={
-            'lat1': -14,
-            'lat2': 8,
-            'lon1': -45,
-            'lon2':-79
+            'lat1': -45,
+            'lat2': -79,
+            'lon1': -14,
+            'lon2': 8
             }):
     """
     Utilizes create_csv to access data on assets folder and generate csv
@@ -521,7 +521,7 @@ def data_acces(dic_start_params, dic_end_params, categories,
 
 
 def csv_filter(csv_path, csv_time, categories,
-               lat1=-14, lat2=8, lon1=-45, lon2=-79):
+               lat1=-45, lat2=-79, lon1=-14, lon2=-8):
     """
     Uses data to filter out csv
 
@@ -597,7 +597,6 @@ def csv_filter(csv_path, csv_time, categories,
             read_h = csv.reader(inp)
             next(read_h)
             for row in read_h:
-                print(float(row[group_lat]), float(row[group_lon]))
                 if in_square(float(row[group_lat]), float(row[group_lon])):
                     write_h.writerow(row)
         # os.remove(orig_csv)

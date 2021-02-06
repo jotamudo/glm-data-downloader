@@ -25,10 +25,10 @@ special_params = {
 
 # Dicionário p/ as coordenadas do filtro, os arquivos originais não serão apagados
 dic_coordinates={
-    'lat1': -14,
-    'lat2': 8,
-    'lon1': -45,
-    'lon2':-79
+    'lat1': -45,
+    'lat2': -79,
+    'lon1': -14,
+    'lon2': 8
 }
 
 # Categorias a serem analisadas, válidas: 'flash'; 'group'; 'event';
