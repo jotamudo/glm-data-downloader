@@ -227,6 +227,8 @@ def flash_csv(file, file_idx, tmp_dir, root_dir):
     # Cria Dataframe com as listas p/ exportar em .csv
     flashes = pd.DataFrame.from_dict({
         'flash_id': glm_data.variables['flash_id'][:],
+        'flash_lat': glm_data.variables['flash_lat'][:],
+        'flash_lon': glm_data.variables['flash_lon'][:],
 
         'Ano': anos,
         'Mes': meses,
@@ -241,8 +243,6 @@ def flash_csv(file, file_idx, tmp_dir, root_dir):
         'flash_time_offset_of_last_event':
         glm_data.variables['flash_time_offset_of_last_event'][:],
 
-        'flash_lat': glm_data.variables['flash_lat'][:],
-        'flash_lon': glm_data.variables['flash_lon'][:],
         'flash_area': glm_data.variables['flash_area'][:],
         'flash_energy': glm_data.variables['flash_energy'][:],
         'flash_quality_flag': glm_data.variables['flash_quality_flag'][:],
@@ -297,17 +297,19 @@ def group_csv(file, file_idx, tmp_dir, root_dir):
         segundos.append(time.second + (time.microsecond / 1000000))
     # Coleta dados
     # Cria Dataframe com as listas p/ exportar em .csv
-    groups = pd.DataFrame.from_dict({
+    groups = pd.DataFrame.from_dict({   # type: ignore
         'group_id': glm_data.variables['group_id'][:],
+        'group_lat': glm_data.variables['group_lat'][:],
+        'group_lon': glm_data.variables['group_lon'][:],
+
         'Ano': anos,
         'Mes': meses,
         'Dia': dias,
         'Hora': horas,
         'Minuto': minutos,
         'Segundo': segundos,
+
         'group_time_offset': glm_data.variables['group_time_offset'][:],
-        'group_lat': glm_data.variables['group_lat'][:],
-        'group_lon': glm_data.variables['group_lon'][:],
         'group_area': glm_data.variables['group_area'][:],
         'group_energy': glm_data.variables['group_energy'][:],
         'group_parent_flash_id': glm_data.variables['group_parent_flash_id'][:],
@@ -522,7 +524,7 @@ def data_acces(dic_start_params, dic_end_params, categories,
 
 
 def csv_filter(csv_path, csv_time, categories,
-               lat1=-45, lat2=-79, lon1=-14, lon2=-8):
+               lat1=-45, lat2=-79, lon1=-14, lon2=-8, rm_orig=False):
     """
     Uses data to filter out csv
 
@@ -540,74 +542,28 @@ def csv_filter(csv_path, csv_time, categories,
     if not os.path.exists(csv_path):
         print('Files does\'nt exist')
         return
-    if 'flash' in categories:
+    for category in categories:
         # Colunas:
-        # flash_id,
-        # Ano,
-        # Mes,
-        # Dia,
-        # Hora,
-        # Minuto,
-        # Segundo,
-        # flash_time_offset_of_first_event,
-        # flash_time_offset_of_last_event,
-        # flash_lat,
-        # flash_lon,
-        # flash_area,
-        # flash_energy,
-        # flash_quality_flag
-        flash_lat = 9
-        flash_lon = 10
-        orig_csv = os.path.join(csv_path, f'flash_{csv_time}.csv')
-        filter_csv = os.path.join(csv_path, f'flash-filtered_{csv_time}.csv')
+        # category_id,
+        # category_lat,
+        # category_lon,
+        cat_lat = 1
+        cat_lon = 2
+        orig_csv = os.path.join(csv_path, f'{category}_{csv_time}.csv')
+        filter_csv = os.path.join(csv_path, f'{category}-filtered_{csv_time}.csv')
         in_square = in_square_maker(lat1, lat2, lon1, lon2)
         with open(orig_csv, 'r', newline='') as inp,\
-        open(filter_csv, 'w', newline='') as out:
+             open(filter_csv, 'w', newline='') as out:
             write_h = csv.writer(out)
             read_h = csv.reader(inp)
-            # Escreve o cabeçalho
-            for row in read_h:
-                write_h.writerow(row)
-                break
+            # Pula cabeçalho
+            next(read_h)
             # Filtra o arquivo
             for row in read_h:
-                if in_square(float(row[flash_lat]), float(row[flash_lon])):
+                if in_square(float(row[cat_lat]), float(row[cat_lon])):
                     write_h.writerow(row)
-        # os.remove(orig_csv)
-
-    if 'group' in categories:
-        # Colunas:
-        # group_id,
-        # Ano,
-        # Mes,
-        # Dia,
-        # Hora,
-        # Minuto,
-        # Segundo,
-        # group_time_offset,
-        # group_lat,
-        # group_lon,
-        # group_area,
-        # group_energy,
-        # group_parent_flash_id,
-        # group_quality_flag
-        group_lat = 8
-        group_lon = 9
-        orig_csv = os.path.join(csv_path, f'group_{csv_time}.csv')
-        filter_csv = os.path.join(csv_path, f'group-filtered_{csv_time}.csv')
-        in_square = in_square_maker(lat1, lat2, lon1, lon2)
-        with open(orig_csv, 'r', newline='') as inp,\
-        open(filter_csv, 'w', newline='') as out:
-            write_h = csv.writer(out)
-            read_h = csv.reader(inp)
-            # Escreve o cabeçalho
-            for row in read_h:
-                write_h.writerow(row)
-                break
-            for row in read_h:
-                if in_square(float(row[group_lat]), float(row[group_lon])):
-                    write_h.writerow(row)
-        # os.remove(orig_csv)
+        if rm_orig:
+            os.remove(orig_csv)
 
 
 def in_square_maker(lat1, lat2, lon1, lon2):
