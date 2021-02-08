@@ -565,7 +565,11 @@ def csv_filter(csv_path, csv_time, categories,
         open(filter_csv, 'w', newline='') as out:
             write_h = csv.writer(out)
             read_h = csv.reader(inp)
-            next(read_h)
+            # Escreve o cabeçalho
+            for row in read_h:
+                write_h.writerow(row)
+                break
+            # Filtra o arquivo
             for row in read_h:
                 if in_square(float(row[flash_lat]), float(row[flash_lon])):
                     write_h.writerow(row)
@@ -596,7 +600,10 @@ def csv_filter(csv_path, csv_time, categories,
         open(filter_csv, 'w', newline='') as out:
             write_h = csv.writer(out)
             read_h = csv.reader(inp)
-            next(read_h)
+            # Escreve o cabeçalho
+            for row in read_h:
+                write_h.writerow(row)
+                break
             for row in read_h:
                 if in_square(float(row[group_lat]), float(row[group_lon])):
                     write_h.writerow(row)
