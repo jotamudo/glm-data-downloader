@@ -54,8 +54,8 @@ categories = ['flash', 'group']
 
 tic = time()
 
-# back.assets_download(start_params, end_params)
-back.data_acces(start_params, start_params, categories, dic_coordinates)
+back.assets_download(start_params, end_params)
+back.data_acces(start_params, end_params, categories, dic_coordinates)
 # back.generate_map(start_params, start_params, 1000, (-1.474012, -48.457615))
 tac = time()
 
