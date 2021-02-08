@@ -135,7 +135,7 @@ def csv_folders(year, month, day, hour, root_dir=os.getcwd()):
     :returns: TODO
 
     """
-    folder_name = f'{year}_{month}_{day}_{hour}'
+    folder_name = f'{year}_{month}_{day}'
     try:
         if not os.path.exists(os.path.join(root_dir, folder_name)):
             os.mkdir(folder_name)
@@ -438,7 +438,8 @@ def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
     file_quant = len(os.listdir(assets_dir))
     # Pasta de destino
     csv_time = f'{year}_{month}_{day}_{hour}'
-    csv_dir = os.path.join(root_dir, 'csv', csv_time)
+    folder_name = f'{year}_{month}_{day}'
+    csv_dir = os.path.join(root_dir, 'csv', folder_name)
     # Pasta temporária
     tmp_dir = os.path.join(csv_dir, 'tmp')
     if not os.path.exists(csv_dir):
