@@ -110,7 +110,7 @@ def assets_download(dic_start_params, dic_end_params):
                 # Download dos arquivos
                 fs.get(file, file.split('/')[-1])
                 cnt += 1
-                print(file, f'{(cnt/quant)*(100):.2f}% done')
+                print(file, f'{(cnt/quant)*(100):.2f}% done', end='\r')
 
                 # Move o arquivo p/ pasta designada no loop
                 ls = os.listdir(os.getcwd())
@@ -323,7 +323,7 @@ def group_csv(file, file_idx, tmp_dir, root_dir):
     os.chdir(root_dir)
 
 
-def event_csv(assets_dir, csv_dir, root_dir):
+def event_csv(file, file_idx, tmp_dir, root_dir):
     """
     Function generates csv of flash data based on netCDF4.Dataset given
 
@@ -332,81 +332,55 @@ def event_csv(assets_dir, csv_dir, root_dir):
 
     """
     from netCDF4 import Dataset
+    glm_data = Dataset(file)
 
-    if os.path.exists(assets_dir):
-        os.chdir(assets_dir)
-    else:
-        print('assets_dir não existe')
-        return
+    # Organizando variáveis de tempo
+    tempo_inicio = glm_data.getncattr('time_coverage_start')
+    time_offsets = glm_data.variables['event_time_offset'][:]
+    ano = int(tempo_inicio[0:4])
+    anos = []
+    mes = int(tempo_inicio[5:7])
+    meses = []
+    dia = int(tempo_inicio[8:10])
+    dias = []
+    # Convertendo p/ nanossegundos
+    hora = int(tempo_inicio[11:13])
+    horas = []
+    minuto = int(tempo_inicio[14:16])
+    minutos = []
+    segundo = int(tempo_inicio[17:19])
+    segundos = []
+    data = datetime(ano, mes, dia, hora, minuto, segundo)
+    for offset in time_offsets:
+        microsseconds = int(offset * 1000000)
+        conv_offset = timedelta(microseconds=microsseconds)
+        time = data + conv_offset
+        anos.append(time.year)
+        meses.append(time.month)
+        dias.append(time.day)
+        horas.append(time.hour)
+        minutos.append(time.minute)
+        segundos.append(time.second + (time.microsecond / 1000000))
+    # Cria Dataframe com as listas p/ exportar em .csv
+    events = pd.DataFrame.from_dict({
+        'event_id': glm_data.variables['event_id'][:],
+        'event_lat': glm_data.variables['event_lat'][:],
+        'event_lon': glm_data.variables['event_lon'][:],
 
-    # Cria pasta tmp p/ guardar arquivos temporários
-    tmp_dir = os.path.join(csv_dir, 'tmp')
-    if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
+        'Ano': anos,
+        'Mes': meses,
+        'Dia': dias,
+        'Hora': horas,
+        'Minuto': minutos,
+        'Segundo': segundos,
 
-    files = os.listdir()
-    file_idx = 0
-    file_cnt = 0
-    file_quant = len(files)
-    for file in files:
-
-        # Printa o diretório e arquivo sendo lido
-        print('event')
-        print(os.getcwd())
-        file_cnt += 1
-        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
-        # Abre o arquivo
-        glm_data = Dataset(file)
-
-        # Organizando variáveis de tempo
-        time_len = len(glm_data.variables['event_time_offset'])
-        tempo_inicio = glm_data.getncattr('time_coverage_start')
-        temp = glm_data.variables['event_time_offset'][:]
-        # Fazendo lista de tamanho time_len
-        dia_formatado = [int(tempo_inicio[0:4] +
-                         tempo_inicio[5:7] +
-                         tempo_inicio[8:10])] * time_len
-        # Convertendo p/ nanossegundos
-        hora_n = int(tempo_inicio[11:13]) * 60 * 60 * (10**9)
-        minuto_n = int(tempo_inicio[14:16]) * 60 * (10**9)
-        segundo_n = int(tempo_inicio[17:19]) * (10**9)
-        nano_times = []
-        for idx in range(time_len):
-            nano_times.append(hora_n + minuto_n + segundo_n + float(temp[idx]))
-        # Inserindo o número corretamente convertido na lista
-        tempo_exato = []
-        for nanos in nano_times:
-            # Converte p/ timestamp (divisão inteira vai em floor)
-            times = timedelta(seconds=nanos//1000000000)
-            # Adiciona precisão do nano ao fim
-            times = str(times) + '.' + str(int(nanos % 1000000000)).zfill(9)
-            # Divide nos ":"
-            times = times.split(':')
-            time_string = ''
-            for time in times:
-                time_string += time
-            # formato: HHMMSS.SS
-            tempo_exato.append(float(time_string))
-
-        # Coleta dados
-
-        # Cria Dataframe com as listas p/ exportar em .csv
-        events = pd.DataFrame.from_dict({
-            'event_id': glm_data.variables['event_id'][:],
-            'event_time_offset': glm_data.variables['event_time_offset'][:],
-            'event_lat': glm_data.variables['event_lat'][:],
-            'event_lon': glm_data.variables['event_lon'][:],
-            'event_energy': glm_data.variables['event_energy'][:],
-            'event_parent_group_id': glm_data.variables['event_parent_group_id'][:],
-            'event_count': glm_data.variables['event_count'][:],
-            'Data': dia_formatado,
-            'Tempo_exato': tempo_exato,
-        })
-        os.chdir(tmp_dir)
-        events.to_csv(f'event{file_idx}.csv')
-        file_idx += 1
-        os.chdir(assets_dir)
-    merge_csv(tmp_dir, csv_dir, 'event')
+        'event_time_offset': glm_data.variables['event_time_offset'][:],
+        'event_energy': glm_data.variables['event_energy'][:],
+        'event_parent_group_id': glm_data.variables['event_parent_group_id'][:],
+        'event_count': glm_data.variables['event_count'][:],
+    })
+    os.chdir(tmp_dir)
+    events.to_csv(f'event{file_idx}.csv')
     # Retorna ao diretório raiz
     os.chdir(root_dir)
 
@@ -463,13 +437,15 @@ def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
         file_cnt += 1
         for category in categories:
             csv_functions[category](file_path, file_idx, tmp_dir, root_dir)
-        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done', end='\r')
-        pass
+        print(file, f'{(file_cnt/file_quant)*(100):.2f}% done')
+        print('[', ((file_cnt//file_quant)*(100))*'=', '>',']', end='\r')
+    print('finished csv creation')
 
-    categories = ['flash', 'group']
     merge_csv(tmp_dir, csv_dir, categories, csv_time)
+    print('finished csv merging')
     csv_filter(csv_dir, csv_time, categories,lat1=lat1, lat2=lat2, lon1=lon1,
                lon2=lon2)
+    print('finished csv filtering')
 
     # Disabled for the time being
     # event_csv(assets_dir, csv_dir, root_dir)
@@ -547,6 +523,7 @@ def csv_filter(csv_path, csv_time, categories,
         # category_id,
         # category_lat,
         # category_lon,
+        # ...
         cat_lat = 1
         cat_lon = 2
         orig_csv = os.path.join(csv_path, f'{category}_{csv_time}.csv')
