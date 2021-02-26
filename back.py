@@ -386,7 +386,7 @@ def event_csv(file, file_idx, tmp_dir, root_dir):
 
 
 def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
-               lat1=-14, lat2=8, lon1=-45, lon2=-79):
+               lat1=-14, lat2=8, lon1=-79, lon2=-45):
     """
     Function manipulates .nc files located at args and creates a .csv
     based on it's parameters
@@ -453,8 +453,8 @@ def create_csv(year, month, day, hour, categories, root_dir=os.getcwd(),
 
 def data_acces(dic_start_params, dic_end_params, categories,
         dic_coordinates={
-            'lat1': -45,
-            'lat2': -79,
+            'lat1': -79,
+            'lat2': -45,
             'lon1': -14,
             'lon2': 8
             }):
@@ -500,7 +500,7 @@ def data_acces(dic_start_params, dic_end_params, categories,
 
 
 def csv_filter(csv_path, csv_time, categories,
-               lat1=-45, lat2=-79, lon1=-14, lon2=-8, rm_orig=False):
+               lat1=-79, lat2=-45, lon1=-14, lon2=8, rm_orig=False):
     """
     Uses data to filter out csv
 
