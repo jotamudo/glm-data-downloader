@@ -196,6 +196,10 @@ def flash_csv(file, file_idx, tmp_dir, root_dir):
     # Abre o arquivo
     glm_data = Dataset(file)
 
+    # Remove mask do array
+    for variable in glm_data.variables:
+        glm_data.variables[variable].set_auto_mask(False)
+
     # Organizando variáveis de tempo
     # Time format : YYYY-MM-DDTHH:MM:SS.S
     tempo_inicio = glm_data.getncattr('time_coverage_start')
@@ -268,6 +272,10 @@ def group_csv(file, file_idx, tmp_dir, root_dir):
     # Abre o arquivo
     glm_data = Dataset(file)
 
+    # Remove mask do array
+    for variable in glm_data.variables:
+        glm_data.variables[variable].set_auto_mask(False)
+
     # Organizando variáveis de tempo
     tempo_inicio = glm_data.getncattr('time_coverage_start')
     time_offsets = glm_data.variables['group_time_offset'][:]
@@ -333,6 +341,10 @@ def event_csv(file, file_idx, tmp_dir, root_dir):
     """
     from netCDF4 import Dataset
     glm_data = Dataset(file)
+
+    # Remove mask do array
+    for variable in glm_data.variables:
+        glm_data.variables[variable].set_auto_mask(False)
 
     # Organizando variáveis de tempo
     tempo_inicio = glm_data.getncattr('time_coverage_start')
