@@ -4,6 +4,7 @@ TODO: Implementar geração de mapa baseado em csvs gerado
 """
 
 import os
+import botocore
 import numpy as np
 import shutil
 from datetime import datetime
