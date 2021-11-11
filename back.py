@@ -47,8 +47,8 @@ def make_folder(year, month, day, hour):
             print("Erro ao criar o diretório", param)
         pass
     # Path pra pasta com nome formatado
-    folder_str = os.getcwd()
 
+    folder_str = os.getcwd()
     # Retorna ao diretório de origem
     os.chdir(curr_dir)
     return folder_str
@@ -124,7 +124,7 @@ def assets_download(dic_start_params, dic_end_params):
     os.chdir(curr_path)
 
 
-def csv_folders(year, month, day, hour, root_dir=os.getcwd()):
+def csv_folders(year, month, day, root_dir=os.getcwd()):
     """
     Function creates a folder in the csv directory
 
@@ -165,7 +165,8 @@ def merge_csv(tmp_dir, csv_dir, categories, csv_time):
         # export to csv
         os.chdir(csv_dir)
         # Remove coluna 'Unnamed'
-        combined_csv = combined_csv.loc[:, ~combined_csv.columns.str.contains('^Unnamed')]
+        combined_csv = combined_csv.loc[:, ~combined_csv.
+                                            columns.str.contains('^Unnamed')]
         # Sorting do dataframe pelo id
         combined_csv = combined_csv.sort_values(f'{category}_id')
         # Remove coluna de índices
@@ -502,24 +503,24 @@ def data_acces(dic_start_params, dic_end_params, categories,
 def csv_filter(csv_path, csv_time, categories,
                lat1=-79, lat2=-45, lon1=-14, lon2=8, rm_orig=False):
     """
-    Uses data to filter out csv
+    uses data to filter out csv
 
-    :csv_path: TODO
-    :coordinates: TODO
-    :radius: TODO
-    :Center: TODO
-    :returns: TODO
+    :csv_path: todo
+    :coordinates: todo
+    :radius: todo
+    :center: todo
+    :returns: todo
 
     """
     import csv
-    # if coordinates == None and radius == None and center == None:
-        # print('Invalid filter')
+    # if coordinates == none and radius == none and center == none:
+        # print('invalid filter')
         # return
     if not os.path.exists(csv_path):
-        print('Files does\'nt exist')
+        print('files does\'nt exist')
         return
     for category in categories:
-        # Colunas:
+        # colunas:
         # category_id,
         # category_lat,
         # category_lon,
@@ -533,9 +534,9 @@ def csv_filter(csv_path, csv_time, categories,
              open(filter_csv, 'w', newline='') as out:
             write_h = csv.writer(out)
             read_h = csv.reader(inp)
-            # Pula cabeçalho
+            # pula cabeçalho
             next(read_h)
-            # Filtra o arquivo
+            # filtra o arquivo
             for row in read_h:
                 if in_square(float(row[cat_lat]), float(row[cat_lon])):
                     write_h.writerow(row)
